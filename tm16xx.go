@@ -1,6 +1,12 @@
+// Copyright 2015, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package tm1638
 
-import "github.com/davecheney/gpio"
+import (
+	"github.com/davecheney/gpio"
+)
 
 // TM16XX represent a TM16XX module
 type TM16XX struct {
@@ -9,7 +15,11 @@ type TM16XX struct {
 
 // NewTM16XX returns point of TM16XX which is initialized given gpio numbers
 func NewTM16XX(data, clk, strobe int,
-	display, activeDisplay, intensity byte) (d *TM16XX, err error) {
+	activeDisplay bool, intensity byte) (*TM16XX, error) {
+
+	var d = TM16XX{}
+	var err error
+
 	d.data, err = gpio.OpenPin(data, gpio.ModeOutput)
 	if err != nil {
 		return nil, err
@@ -32,7 +42,7 @@ func NewTM16XX(data, clk, strobe int,
 
 	d.sendCmd(0x40)
 	v := min(7, intensity)
-	if activeDisplay != 0 {
+	if activeDisplay {
 		v |= 8
 	}
 	d.sendCmd(0x80 | v)
@@ -44,7 +54,42 @@ func NewTM16XX(data, clk, strobe int,
 	}
 
 	d.strobe.Set()
-	return
+	return &d, nil
+}
+
+// SetupDisplay initialized the display
+func (d *TM16XX) SetupDisplay(active bool, intensity byte) {
+	v := min(7, intensity)
+	if active {
+		v |= 8
+	}
+	d.sendCmd(0x80 | v)
+
+	d.strobe.Clear()
+	d.clk.Clear()
+	d.clk.Set()
+	d.strobe.Set()
+}
+
+// DisplayDigit displays a digit
+func (d *TM16XX) DisplayDigit(digit byte, pos byte, dot bool) {
+	d.sendChar(pos, fontNumber[digit&0x0F], dot)
+}
+
+// DisplayError display Error
+func (d *TM16XX) DisplayError() {
+	d.setDisplay(fontErrorData)
+}
+
+// ClearDigit clear digit in given position
+func (d *TM16XX) ClearDigit(pos byte, dot bool) {
+	d.sendChar(pos, 0, dot)
+}
+
+func (d *TM16XX) setDisplay(val []byte) {
+	for i, c := range val {
+		d.sendChar(byte(i), c, false)
+	}
 }
 
 func (d *TM16XX) sendCmd(cmd byte) {
@@ -64,8 +109,7 @@ func (d *TM16XX) sendData(addr, data byte) {
 func (d *TM16XX) send(data byte) {
 	for i := 0; i < 8; i++ {
 		d.clk.Clear()
-		v := data & 1
-		if v&1 == 0 {
+		if data&1 == 0 {
 			d.data.Clear()
 		} else {
 			d.data.Set()
@@ -73,4 +117,11 @@ func (d *TM16XX) send(data byte) {
 		data >>= 1
 		d.clk.Set()
 	}
+}
+
+func (d *TM16XX) sendChar(pos byte, data byte, dot bool) {
+	if dot {
+		data |= 0x80
+	}
+	d.sendData(pos<<1, data)
 }

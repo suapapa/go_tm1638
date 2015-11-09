@@ -1,3 +1,7 @@
+// Copyright 2015, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package tm1638
 
 /*
@@ -12,7 +16,7 @@ The bits are displayed by mapping bellow
 */
 
 // definition for standard hexadecimal numbers
-var NumberFont = []byte{
+var fontNumber = []byte{
 	b("00111111"), // 0
 	b("00000110"), // 1
 	b("01011011"), // 2
@@ -32,7 +36,7 @@ var NumberFont = []byte{
 }
 
 // definition for error
-var ErrorData = []byte{
+var fontErrorData = []byte{
 	b("01111001"), // E
 	b("01010000"), // r
 	b("01010000"), // r
@@ -44,7 +48,7 @@ var ErrorData = []byte{
 }
 
 // definition for the displayable ASCII chars
-var FontDefault = []byte{
+var fontDefault = []byte{
 	b("00000000"), // (32)  <space>
 	b("10000110"), // (33)	!
 	b("00100010"), // (34)	"

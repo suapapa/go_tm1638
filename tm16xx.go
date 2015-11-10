@@ -11,6 +11,7 @@ import (
 // TM16XX represent a TM16XX module
 type TM16XX struct {
 	data, clk, strobe gpio.Pin
+	displays          int
 }
 
 // NewTM16XX returns point of TM16XX which is initialized given gpio numbers
@@ -72,8 +73,8 @@ func (d *TM16XX) SetupDisplay(active bool, intensity byte) {
 }
 
 // DisplayDigit displays a digit
-func (d *TM16XX) DisplayDigit(digit byte, pos byte, dot bool) {
-	d.sendChar(pos, fontNumber[digit&0x0F], dot)
+func (d *TM16XX) DisplayDigit(digit byte, pos int, dot bool) {
+	d.sendChar(byte(pos), fontNumber[digit&0x0F], dot)
 }
 
 // DisplayError display Error
@@ -82,8 +83,8 @@ func (d *TM16XX) DisplayError() {
 }
 
 // ClearDigit clear digit in given position
-func (d *TM16XX) ClearDigit(pos byte, dot bool) {
-	d.sendChar(pos, 0, dot)
+func (d *TM16XX) ClearDigit(pos int, dot bool) {
+	d.sendChar(byte(pos), 0, dot)
 }
 
 func (d *TM16XX) setDisplay(val []byte) {

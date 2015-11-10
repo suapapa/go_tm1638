@@ -4,6 +4,13 @@
 
 package tm1638
 
+// TM1638Color... are color of leds
+const (
+	TM1638ColorNone = iota
+	TM1638ColorRed
+	TM1638ColorGreen
+)
+
 // TM1638 represent TM1638 base device
 type TM1638 struct {
 	TM16XX
@@ -39,7 +46,7 @@ func (d *TM1638) DisplayHexNumber(num uint64, dots byte, leadingZeros bool) {
 	}
 }
 
-// DisplayDecNumberAt display dec numbers at startPos on displays
+// DisplayDecNumberAt displays dec numbers at startPos on displays
 func (d *TM1638) DisplayDecNumberAt(num uint64, dots byte, startPos int, leadingZeros bool) {
 	if num > 99999999 {
 		d.DisplayError()
@@ -59,7 +66,58 @@ func (d *TM1638) DisplayDecNumberAt(num uint64, dots byte, startPos int, leading
 	}
 }
 
-// DisplayDecNumber display dec numbers on display
+// DisplayDecNumber displays dec numbers on display
 func (d *TM1638) DisplayDecNumber(num uint64, dots byte, leadingZeros bool) {
 	d.DisplayDecNumberAt(num, dots, 0, leadingZeros)
+}
+
+// DisplaySignedDecNumber displays signed dec numbers on display
+func (d *TM1638) DisplaySignedDecNumber(num int64, dots byte, leadingZeros bool) {
+	if num >= 0 {
+		d.DisplayDecNumber(uint64(num), dots, leadingZeros)
+		return
+	}
+	if -num > 99999999 {
+		d.DisplayError()
+		return
+	}
+	d.DisplayDecNumberAt(uint64(-num), dots, 1, leadingZeros)
+	d.sendChar(0, fontDefault[13], (dots&0x80) != 0)
+}
+
+// DisplayBinNumber displays binary number on display
+func (d *TM1638) DisplayBinNumber(num byte, dots byte) {
+	for i := 0; i < d.displays; i++ {
+		var v byte
+		if num&(1<<byte(i)) != 0 {
+			v = 1
+		}
+		d.DisplayDigit(v, d.displays-i-1, (dots&(1<<byte(i))) != 0)
+	}
+}
+
+// SetLED sets led in pos to given color
+func (d *TM1638) SetLED(color byte, pos byte) {
+	d.sendData(pos<<1+1, color)
+}
+
+// SetLEDs sets leds
+func (d *TM1638) SetLEDs(leds uint16) {
+	for i := 0; i < d.displays; i++ {
+		var color byte
+		if (leds & uint16(1<<uint16(i))) != 0 {
+			color |= TM1638ColorRed
+		}
+		if (leds & uint16(1<<uint16(i+8))) != 0 {
+			color |= TM1638ColorGreen
+		}
+
+		d.SetLED(color, byte(i))
+
+	}
+}
+
+func (d *TM1638) GetButton() byte {
+	//TODO: fill here
+	return 0
 }

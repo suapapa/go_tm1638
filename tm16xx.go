@@ -5,11 +5,15 @@
 package tm1638
 
 import (
+	"sync"
+
 	"github.com/davecheney/gpio"
 )
 
 // TM16XX represent a TM16XX module
 type TM16XX struct {
+	sync.Mutex
+
 	data, clk, strobe gpio.Pin
 	displays          int
 }
@@ -108,6 +112,7 @@ func (d *TM16XX) sendData(addr, data byte) {
 }
 
 func (d *TM16XX) send(data byte) {
+	d.Lock()
 	for i := 0; i < 8; i++ {
 		d.clk.Clear()
 		if data&1 == 0 {
@@ -118,6 +123,26 @@ func (d *TM16XX) send(data byte) {
 		data >>= 1
 		d.clk.Set()
 	}
+	d.Unlock()
+}
+
+func (d *TM16XX) receive() (temp byte) {
+	d.data.SetMode(gpio.ModeInput)
+	d.data.Set() // TODO: is this makes data pin pull up?
+
+	for i := 0; i < 8; i++ {
+		temp >>= 1
+		d.clk.Clear()
+		if d.data.Get() {
+			temp |= 0x80
+		}
+		d.clk.Set()
+	}
+
+	d.data.SetMode(gpio.ModeOutput)
+	d.data.Clear()
+
+	return
 }
 
 func (d *TM16XX) sendChar(pos byte, data byte, dot bool) {

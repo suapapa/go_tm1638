@@ -4,11 +4,14 @@
 
 package tm1638
 
+// Color is type for LED colors
+type Color byte
+
 // TM1638Color... are color of leds
 const (
-	TM1638ColorNone = iota
-	TM1638ColorRed
-	TM1638ColorGreen
+	ColorNone Color = iota
+	ColorGreen
+	ColorRed
 )
 
 // TM1638 represent TM1638 base device
@@ -97,27 +100,34 @@ func (d *TM1638) DisplayBinNumber(num byte, dots byte) {
 }
 
 // SetLED sets led in pos to given color
-func (d *TM1638) SetLED(color byte, pos byte) {
-	d.sendData(pos<<1+1, color)
+func (d *TM1638) SetLED(c Color, pos byte) {
+	d.sendData(pos<<1+1, byte(c))
 }
 
 // SetLEDs sets leds
 func (d *TM1638) SetLEDs(leds uint16) {
-	for i := 0; i < d.displays; i++ {
-		var color byte
-		if (leds & uint16(1<<uint16(i))) != 0 {
-			color |= TM1638ColorRed
+	for i := uint16(0); i < uint16(d.displays); i++ {
+		var color Color
+		if leds&(1<<i) != 0 {
+			color |= ColorRed
 		}
-		if (leds & uint16(1<<uint16(i+8))) != 0 {
-			color |= TM1638ColorGreen
+		if leds&(1<<(i+8)) != 0 {
+			color |= ColorGreen
 		}
-
 		d.SetLED(color, byte(i))
-
 	}
 }
 
+// GetButton read buttons
 func (d *TM1638) GetButton() byte {
-	//TODO: fill here
-	return 0
+	var keys byte
+
+	d.strobe.Clear()
+	d.send(0x042)
+	for i := 0; i < 4; i++ {
+		keys |= (d.receive() << uint(i))
+	}
+	d.strobe.Set()
+
+	return keys
 }

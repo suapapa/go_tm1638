@@ -16,8 +16,24 @@ func main() {
 		panic(err)
 	}
 
+	d.SetLEDs(0x0000)
+	time.Sleep(1 * time.Second)
 	d.DisplayError()
-	time.Sleep(3 * time.Second)
-	d.DisplayDecNumber(12345678, 0, false)
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
+	d.DisplayHexNumber(0xff4500, 0x0F, true)
+	time.Sleep(1 * time.Second)
+	d.DisplayDecNumber(uint64(time.Now().UnixNano()%100000000), 0, true)
+	time.Sleep(1 * time.Second)
+	d.DisplaySignedDecNumber(-2345678, 0, false)
+	time.Sleep(1 * time.Second)
+	d.DisplayBinNumber(0x45, 0xF0)
+	time.Sleep(1 * time.Second)
+	d.SetLEDs(0xF00F)
+
+	for {
+		time.Sleep(10 * time.Millisecond)
+		keys := d.GetButton()
+		d.DisplayBinNumber(keys, 0x00)
+	}
+
 }

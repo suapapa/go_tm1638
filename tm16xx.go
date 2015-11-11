@@ -64,6 +64,7 @@ func NewTM16XX(data, clk, strobe int,
 
 // SetupDisplay initialized the display
 func (d *TM16XX) SetupDisplay(active bool, intensity byte) {
+	d.Lock()
 	v := min(7, intensity)
 	if active {
 		v |= 8
@@ -74,6 +75,7 @@ func (d *TM16XX) SetupDisplay(active bool, intensity byte) {
 	d.clk.Clear()
 	d.clk.Set()
 	d.strobe.Set()
+	d.Unlock()
 }
 
 // DisplayDigit displays a digit
@@ -127,6 +129,7 @@ func (d *TM16XX) send(data byte) {
 }
 
 func (d *TM16XX) receive() (temp byte) {
+	d.Lock()
 	d.data.SetMode(gpio.ModeInput)
 	d.data.Set() // TODO: is this makes data pin pull up?
 
@@ -141,6 +144,7 @@ func (d *TM16XX) receive() (temp byte) {
 
 	d.data.SetMode(gpio.ModeOutput)
 	d.data.Clear()
+	d.Unlock()
 
 	return
 }

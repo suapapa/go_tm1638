@@ -1,4 +1,5 @@
 # tm1638: Go port of tm1638 library
+[video](https://www.youtube.com/watch?v=7TLhdkBWtM8)
 
 ## Dependency
 
@@ -10,4 +11,5 @@
 
 ## Build Example
 
+    cd example
     GOARCH=arm GOOS=linux go build

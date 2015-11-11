@@ -1,5 +1,6 @@
 # tm1638: Go port of tm1638 library
-[video](https://www.youtube.com/watch?v=7TLhdkBWtM8)
+
+[![video](http://img.youtube.com/vi/7TLhdkBWtM8/0.jpg)](http://www.youtube.com/watch?v=7TLhdkBWtM8)
 
 ## Dependency
 

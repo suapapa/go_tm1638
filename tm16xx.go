@@ -4,25 +4,19 @@
 
 package tm1638
 
-import (
-	"sync"
+import "github.com/davecheney/gpio"
 
-	"github.com/davecheney/gpio"
-)
-
-// TM16XX represent a TM16XX module
-type TM16XX struct {
-	sync.Mutex
-
+// tm16xx represent a tm16xx module
+type tm16xx struct {
 	data, clk, strobe gpio.Pin
 	displays          int
 }
 
-// NewTM16XX returns point of TM16XX which is initialized given gpio numbers
-func NewTM16XX(data, clk, strobe int,
-	activeDisplay bool, intensity byte) (*TM16XX, error) {
+// Newtm16xx returns point of tm16xx which is initialized given gpio numbers
+func newTm16xx(data, clk, strobe int,
+	activeDisplay bool, intensity byte) (*tm16xx, error) {
 
-	var d = TM16XX{}
+	var d tm16xx
 	var err error
 
 	d.data, err = gpio.OpenPin(data, gpio.ModeOutput)
@@ -63,8 +57,7 @@ func NewTM16XX(data, clk, strobe int,
 }
 
 // SetupDisplay initialized the display
-func (d *TM16XX) SetupDisplay(active bool, intensity byte) {
-	d.Lock()
+func (d tm16xx) SetupDisplay(active bool, intensity byte) {
 	v := min(7, intensity)
 	if active {
 		v |= 8
@@ -75,37 +68,36 @@ func (d *TM16XX) SetupDisplay(active bool, intensity byte) {
 	d.clk.Clear()
 	d.clk.Set()
 	d.strobe.Set()
-	d.Unlock()
 }
 
 // DisplayDigit displays a digit
-func (d *TM16XX) DisplayDigit(digit byte, pos int, dot bool) {
+func (d tm16xx) DisplayDigit(digit byte, pos int, dot bool) {
 	d.sendChar(byte(pos), fontNumber[digit&0x0F], dot)
 }
 
 // DisplayError display Error
-func (d *TM16XX) DisplayError() {
+func (d tm16xx) DisplayError() {
 	d.setDisplay(fontErrorData)
 }
 
 // ClearDigit clear digit in given position
-func (d *TM16XX) ClearDigit(pos int, dot bool) {
+func (d tm16xx) ClearDigit(pos int, dot bool) {
 	d.sendChar(byte(pos), 0, dot)
 }
 
-func (d *TM16XX) setDisplay(val []byte) {
+func (d tm16xx) setDisplay(val []byte) {
 	for i, c := range val {
 		d.sendChar(byte(i), c, false)
 	}
 }
 
-func (d *TM16XX) sendCmd(cmd byte) {
+func (d tm16xx) sendCmd(cmd byte) {
 	d.strobe.Clear()
 	d.send(cmd)
 	d.strobe.Set()
 }
 
-func (d *TM16XX) sendData(addr, data byte) {
+func (d tm16xx) sendData(addr, data byte) {
 	d.sendCmd(0x44)
 	d.strobe.Clear()
 	d.send(0xC0 | addr)
@@ -113,8 +105,7 @@ func (d *TM16XX) sendData(addr, data byte) {
 	d.strobe.Set()
 }
 
-func (d *TM16XX) send(data byte) {
-	d.Lock()
+func (d tm16xx) send(data byte) {
 	for i := 0; i < 8; i++ {
 		d.clk.Clear()
 		if data&1 == 0 {
@@ -125,11 +116,9 @@ func (d *TM16XX) send(data byte) {
 		data >>= 1
 		d.clk.Set()
 	}
-	d.Unlock()
 }
 
-func (d *TM16XX) receive() (temp byte) {
-	d.Lock()
+func (d tm16xx) receive() (temp byte) {
 	d.data.SetMode(gpio.ModeInput)
 	d.data.Set() // TODO: is this makes data pin pull up?
 
@@ -144,14 +133,20 @@ func (d *TM16XX) receive() (temp byte) {
 
 	d.data.SetMode(gpio.ModeOutput)
 	d.data.Clear()
-	d.Unlock()
 
 	return
 }
 
-func (d *TM16XX) sendChar(pos byte, data byte, dot bool) {
+func (d tm16xx) sendChar(pos byte, data byte, dot bool) {
 	if dot {
 		data |= 0x80
 	}
 	d.sendData(pos<<1, data)
+}
+
+// Close closes all open pins
+func (d tm16xx) Close() {
+	d.clk.Close()
+	d.data.Close()
+	d.strobe.Close()
 }

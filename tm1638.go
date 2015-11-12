@@ -16,14 +16,14 @@ const (
 
 // TM1638 represent TM1638 base device
 type TM1638 struct {
-	TM16XX
+	tm16xx
 }
 
 // NewTM1638 retrives Pointer of a TM1638
 func NewTM1638(data, clk, strobe int) (*TM1638, error) {
 	activeDisplay := true
 	intensity := byte(7)
-	d, err := NewTM16XX(data, clk, strobe, activeDisplay, intensity)
+	d, err := newTm16xx(data, clk, strobe, activeDisplay, intensity)
 	if err != nil {
 		return nil, err
 	}
@@ -31,14 +31,14 @@ func NewTM1638(data, clk, strobe int) (*TM1638, error) {
 	d.displays = 8
 
 	var r = TM1638{
-		TM16XX: *d,
+		tm16xx: *d,
 	}
 
 	return &r, err
 }
 
 // DisplayHexNumber displays hex numbers on displays
-func (d *TM1638) DisplayHexNumber(num uint64, dots byte, leadingZeros bool) {
+func (d TM1638) DisplayHexNumber(num uint64, dots byte, leadingZeros bool) {
 	for i := 0; i < d.displays; i++ {
 		if !leadingZeros && num == 0 {
 			d.ClearDigit(d.displays-i-1, dots&(1<<uint8(i)) != 0)
@@ -50,7 +50,7 @@ func (d *TM1638) DisplayHexNumber(num uint64, dots byte, leadingZeros bool) {
 }
 
 // DisplayDecNumberAt displays dec numbers at startPos on displays
-func (d *TM1638) DisplayDecNumberAt(num uint64, dots byte, startPos int, leadingZeros bool) {
+func (d TM1638) DisplayDecNumberAt(num uint64, dots byte, startPos int, leadingZeros bool) {
 	if num > 99999999 {
 		d.DisplayError()
 		return
@@ -70,12 +70,12 @@ func (d *TM1638) DisplayDecNumberAt(num uint64, dots byte, startPos int, leading
 }
 
 // DisplayDecNumber displays dec numbers on display
-func (d *TM1638) DisplayDecNumber(num uint64, dots byte, leadingZeros bool) {
+func (d TM1638) DisplayDecNumber(num uint64, dots byte, leadingZeros bool) {
 	d.DisplayDecNumberAt(num, dots, 0, leadingZeros)
 }
 
 // DisplaySignedDecNumber displays signed dec numbers on display
-func (d *TM1638) DisplaySignedDecNumber(num int64, dots byte, leadingZeros bool) {
+func (d TM1638) DisplaySignedDecNumber(num int64, dots byte, leadingZeros bool) {
 	if num >= 0 {
 		d.DisplayDecNumber(uint64(num), dots, leadingZeros)
 		return
@@ -89,7 +89,7 @@ func (d *TM1638) DisplaySignedDecNumber(num int64, dots byte, leadingZeros bool)
 }
 
 // DisplayBinNumber displays binary number on display
-func (d *TM1638) DisplayBinNumber(num byte, dots byte) {
+func (d TM1638) DisplayBinNumber(num byte, dots byte) {
 	for i := 0; i < d.displays; i++ {
 		var v byte
 		if num&(1<<byte(i)) != 0 {
@@ -100,12 +100,12 @@ func (d *TM1638) DisplayBinNumber(num byte, dots byte) {
 }
 
 // SetLED sets led in pos to given color
-func (d *TM1638) SetLED(c Color, pos byte) {
+func (d TM1638) SetLED(c Color, pos byte) {
 	d.sendData(pos<<1+1, byte(c))
 }
 
 // SetLEDs sets leds
-func (d *TM1638) SetLEDs(leds uint16) {
+func (d TM1638) SetLEDs(leds uint16) {
 	for i := uint16(0); i < uint16(d.displays); i++ {
 		var color Color
 		if leds&(1<<i) != 0 {
@@ -119,7 +119,7 @@ func (d *TM1638) SetLEDs(leds uint16) {
 }
 
 // GetButton read buttons
-func (d *TM1638) GetButton() byte {
+func (d TM1638) GetButton() byte {
 	var keys byte
 
 	d.strobe.Clear()
